@@ -5,6 +5,30 @@ var Interval = require('../src/pitch').Interval;
 
 describe('Pitch', function() {
 
+  describe('Pitch.Octave', function() {
+    it('should reject noninteger octave number', function() {
+      assert.throws(function() {
+        new Pitch.Octave(1.5);
+      });
+      assert.throws(function() {
+        new Pitch.Octave("1");
+      });
+      assert.throws(function() {
+        new Pitch.Octave(NaN);
+      });
+      assert.throws(function() {
+        new Pitch.Octave(Infinity);
+      });
+      assert.throws(function() {
+        new Pitch.Octave(-Infinity);
+      });
+    });
+
+    it('should accept a negative octave number', function() {
+      new Pitch.Octave(-1);
+    });
+  });
+
   describe('Interval', function() {
 
     it('should accept good quality-size pairings', function() {
@@ -78,6 +102,24 @@ describe('Pitch', function() {
     it('should reject negative size', function() {
       assert.throws(function() {
         new Interval(Interval.Quality.Minor, -1);
+      });
+    });
+
+    it('should reject noninteger size', function() {
+      assert.throws(function() {
+        new Interval(Interval.Quality.Minor, 1.5);
+      });
+      assert.throws(function() {
+        new Interval(Interval.Quality.Minor, "1");
+      });
+      assert.throws(function() {
+        new Interval(Interval.Quality.Minor, NaN);
+      });
+      assert.throws(function() {
+        new Interval(Interval.Quality.Minor, Infinity);
+      });
+      assert.throws(function() {
+        new Interval(Interval.Quality.Minor, -Infinity);
       });
     });
 
