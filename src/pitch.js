@@ -1,18 +1,6 @@
 'use strict';
 
-function addErrorTypes(classConstructor, className, errorNames) {
-  errorNames.forEach(function(errorName) {
-    classConstructor[errorName] = function(message) {
-      this.name = className + '.' + errorName;
-      this.message = message || "";
-    }
-    classConstructor[errorName].prototype = Error.prototype;
-  });
-}
-
-function positiveModulus(a, n) {
-  return ((a % n) + n) % n;
-}
+var Util = require('../src/util').Util;
 
 function intervalUpDown(interval, pitch, below) {
   var multiplier = below ? -1 : 1;
@@ -57,7 +45,7 @@ class Interval {
   }
 }
 
-addErrorTypes(Interval, "Interval", [
+Util.addErrorTypes(Interval, "Interval", [
   "NullSizeError",
   "NullQualityError",
   "InvalidQualityError",
@@ -109,23 +97,23 @@ intervalQualitiesFixed = true;
 
 Interval.Quality.fromOffset = function(size, offset) {
   if (isAllowed2367(size % 7)) {
-    switch(positiveModulus(offset, 12)) {
+    switch(Util.positiveModulus(offset, 12)) {
       case  1: return Interval.Quality.Augmented;
       case  0: return Interval.Quality.Major;
       case -1: return Interval.Quality.Minor;
       case -2: return Interval.Quality.Diminished;
     }
   } else {
-    switch(positiveModulus(offset, 12)) {
+    switch(Util.positiveModulus(offset, 12)) {
       case  1: return Interval.Quality.Augmented;
       case  0: return Interval.Quality.Perfect;
       case -1: return Interval.Quality.Diminished;
     }
   }
-  throw new Interval.Quality.InvalidOffsetError('Invalid offset ' + offset + ' (' + positiveModulus(offset, 12) + ') for Interval of size ' + size + '.');
+  throw new Interval.Quality.InvalidOffsetError('Invalid offset ' + offset + ' (' + Util.positiveModulus(offset, 12) + ') for Interval of size ' + size + '.');
 }
 
-addErrorTypes(Interval.Quality, "Interval.Quality", [
+Util.addErrorTypes(Interval.Quality, "Interval.Quality", [
   "InvalidOffsetError",
 ]);
 
@@ -216,7 +204,7 @@ Pitch.Name = class {
   }
 }
 
-addErrorTypes(Pitch.Name, "Pitch.Name", [
+Util.addErrorTypes(Pitch.Name, "Pitch.Name", [
   "IllegalConstructionError",
 ]);
 
