@@ -75,6 +75,12 @@ describe('Pitch', function() {
       });
     });
 
+    it('should reject negative size', function() {
+      assert.throws(function() {
+        new Interval(Interval.Quality.Minor, -1);
+      });
+    });
+
     it('should reject null quality', function() {
       assert.throws(function() {
         new Interval(Interval.Quality.Minor, null);

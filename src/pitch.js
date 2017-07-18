@@ -19,8 +19,10 @@ class Interval {
     this.quality = quality;
     if (size === null || size === undefined) {
       throw new Interval.NullSizeError("Interval Size may not be null.");
+    } else if (size < 0) {
+      throw new Interval.NegativeSizeError("Interval Size may not be negative.");
     } else if (quality === null || quality === undefined) {
-      throw new Interval.NullQualityError("Interval Quality may not be null.")
+      throw new Interval.NullQualityError("Interval Quality may not be null.");
     } else if (!quality.isAllowed(size)) {
       throw new Interval.InvalidQualityError("Invalid Quality for Interval with Size " + size + ".");
     }
@@ -47,6 +49,7 @@ class Interval {
 
 Util.addErrorTypes(Interval, "Interval", [
   "NullSizeError",
+  "NegativeSizeError",
   "NullQualityError",
   "InvalidQualityError",
 ]);
