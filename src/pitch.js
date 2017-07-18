@@ -20,7 +20,7 @@ function intervalUpDown(interval, pitch, below) {
   var octaveOffset = Math.abs(Math.floor((number + multiplier * (interval.size - 1)) / 7));
 
   var name = Pitch.Name.all[(number + multiplier * (interval.size - 1)) % 7];
-  var accidental = Accidental.fromOffset(pitch.accidental.offset + multiplier * interval.quality.getOffset(interval.size));
+  var accidental = Pitch.Accidental.fromOffset(pitch.accidental.offset + multiplier * interval.quality.getOffset(interval.size));
   var octave = new Pitch.Octave(pitch.octave.number + multiplier * octaveOffset);
   return new Pitch(name, accidental, octave);
 }
@@ -154,27 +154,6 @@ Interval.between = function(pitch1, pitch2) {
   return new Interval(quality, totalSize);
 }
 
-class Accidental {
-  constructor(offset) {
-    this.offset = offset;
-  }
-
-  isEqualTo(other) {
-    return this.offset == other.offset;
-  }
-}
-
-var offsetMap = {};
-offsetMap[ 0] = Accidental.Natural     = new Accidental( 0);
-offsetMap[ 1] = Accidental.Sharp       = new Accidental( 1);
-offsetMap[-1] = Accidental.Flat        = new Accidental(-1);
-offsetMap[ 2] = Accidental.DoubleSharp = new Accidental( 2);
-offsetMap[-2] = Accidental.DoubleFlat  = new Accidental(-2);
-
-Accidental.fromOffset = function(offset) {
-  return offsetMap[offset] || Accidental(offset);
-}
-
 class Pitch {
   constructor(name, accidental, octave) {
     this.name = name;
@@ -195,6 +174,27 @@ class Pitch {
       && this.accidental.isEqualTo(other.accidental)
       && this.octave.isEqualTo(other.octave);
   }
+}
+
+Pitch.Accidental = class {
+  constructor(offset) {
+    this.offset = offset;
+  }
+
+  isEqualTo(other) {
+    return this.offset == other.offset;
+  }
+}
+
+var offsetMap = {};
+offsetMap[ 0] = Pitch.Accidental.Natural     = new Pitch.Accidental( 0);
+offsetMap[ 1] = Pitch.Accidental.Sharp       = new Pitch.Accidental( 1);
+offsetMap[-1] = Pitch.Accidental.Flat        = new Pitch.Accidental(-1);
+offsetMap[ 2] = Pitch.Accidental.DoubleSharp = new Pitch.Accidental( 2);
+offsetMap[-2] = Pitch.Accidental.DoubleFlat  = new Pitch.Accidental(-2);
+
+Pitch.Accidental.fromOffset = function(offset) {
+  return offsetMap[offset] || new Pitch.Accidental(offset);
 }
 
 var pitchNamesFixed = false;
@@ -245,7 +245,7 @@ Pitch.Octave = class {
 
 Pitch.Name.all.forEach(function(pitchName) {
   ["Natural", "Sharp", "Flat", "DoubleSharp", "DoubleFlat"].forEach(function(accidentalName) {
-    var accidental = Accidental[accidentalName];
+    var accidental = Pitch.Accidental[accidentalName];
     [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function(octaveNumber) {
       return new Pitch.Octave(octaveNumber);
     }).forEach(function(octave) {
@@ -256,5 +256,4 @@ Pitch.Name.all.forEach(function(pitchName) {
 });
 
 module.exports.Pitch = Pitch;
-module.exports.Accidental = Accidental;
 module.exports.Interval = Interval;

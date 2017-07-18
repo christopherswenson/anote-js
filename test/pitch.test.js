@@ -1,7 +1,6 @@
 var assert = require('assert');
 
 var Pitch = require('../src/pitch').Pitch;
-var Accidental = require('../src/pitch').Accidental;
 var Interval = require('../src/pitch').Interval;
 
 describe('Pitch', function() {
