@@ -63,8 +63,12 @@ addErrorTypes(Interval, "Interval", [
   "InvalidQualityError",
 ]);
 
+var intervalQualitiesFixed = false;
 Interval.Quality = class {
   constructor(isAllowed, getOffset) {
+    if (intervalQualitiesFixed) {
+      throw new Interval.Quality.IllegalConstructionError("Illegal construction of Interval.Quality.")
+    }
     this.getOffset = getOffset;
     this.isAllowed = isAllowed;
   }
@@ -77,6 +81,10 @@ Interval.Quality = class {
     return this === other;
   }
 }
+
+Util.addErrorTypes(Interval.Quality, "Interval.Quality", [
+  "IllegalConstructionError"
+]);
 
 var isAllowed2367 = function(size) {
   return ~[0, 2, 3, 6].indexOf(size % 7);
@@ -97,6 +105,7 @@ Interval.Quality.Augmented  = new Interval.Quality(isAllowedAll,  (size) => 1);
 Interval.Quality.Diminished = new Interval.Quality(isAllowedAll,  function(size) {
   return ~[1, 4, 5].indexOf(size % 7) ? -1 : -2;
 });
+intervalQualitiesFixed = true;
 
 Interval.Quality.fromOffset = function(size, offset) {
   if (isAllowed2367(size % 7)) {
