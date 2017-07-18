@@ -19,6 +19,8 @@ class Interval {
     this.quality = quality;
     if (size === null || size === undefined) {
       throw new Interval.NullSizeError("Interval Size may not be null.");
+    } else if (!Number.isInteger(size)) {
+      throw new Interval.NonintegerSizeError("Interval Size must be an integer.");
     } else if (size < 0) {
       throw new Interval.NegativeSizeError("Interval Size may not be negative.");
     } else if (quality === null || quality === undefined) {
@@ -50,6 +52,7 @@ class Interval {
 Util.addErrorTypes(Interval, "Interval", [
   "NullSizeError",
   "NegativeSizeError",
+  "NonintegerSizeError",
   "NullQualityError",
   "InvalidQualityError",
 ]);
@@ -236,12 +239,19 @@ chromaticIndices['B'] = 11;
 Pitch.Octave = class {
   constructor(number) {
     this.number = number;
+    if (!Number.isInteger(number)) {
+      throw new Pitch.Octave.NonintegerOctaveError("Octave number must be an integer.");
+    }
   }
 
   isEqualTo(other) {
     return this.number == other.number;
   }
 }
+
+Util.addErrorTypes(Pitch.Octave, "Pitch.Octave", [
+  "NonintegerOctaveError",
+]);
 
 Pitch.Name.all.forEach(function(pitchName) {
   ["Natural", "Sharp", "Flat", "DoubleSharp", "DoubleFlat"].forEach(function(accidentalName) {
