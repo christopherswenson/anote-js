@@ -2,8 +2,27 @@ var assert = require('assert');
 
 var Pitch = require('../src/pitch').Pitch;
 var Interval = require('../src/pitch').Interval;
+var TuningSystem = require('../src/pitch').TuningSystem;
 
 describe('Pitch', function() {
+
+  describe('Pitch.toFrequency', function() {
+
+    it('works when using default tuning (TuningSystem.EqualTemperament)', function() {
+      assert.equal(Math.round(Pitch.ANatural4.toFrequency()), 440);
+      assert.equal(Math.round(Pitch.ANatural3.toFrequency()), 220);
+      assert.equal(Math.round(Pitch.ANatural5.toFrequency()), 880);
+
+      assert.equal(Math.round(Pitch.CNatural4.toFrequency()), 262);
+      assert.equal(Math.round(Pitch.DNatural4.toFrequency()), 294);
+      assert.equal(Math.round(Pitch.FSharp1.toFrequency()), 46);
+    });
+
+    it('works when using nondefault tuning', function() {
+      assert(notImplemented);
+    });
+
+  });
 
   describe('Pitch.Octave', function() {
     it('should reject noninteger octave number', function() {
@@ -183,6 +202,7 @@ describe('Pitch', function() {
       assert(Interval.between(Pitch.CNatural4, Pitch.CNatural4).isEqualTo(Interval.Perfect1));
       assert(Interval.between(Pitch.CNatural4, Pitch.CNatural5).isEqualTo(Interval.Perfect8));
       assert(Interval.between(Pitch.CNatural4, Pitch.FSharp4).isEqualTo(Interval.Augmented4));
+      assert(Interval.between(Pitch.FSharp1, Pitch.ANatural4).isEqualTo(new Interval(Interval.Quality.Minor, 24)));
     });
 
   });
@@ -213,6 +233,26 @@ describe('Pitch', function() {
       assert.throws(function() {
         new Interval.Quality(function() {}, function() {});
       })
+    });
+
+  });
+
+  describe('TuningSystem', function() {
+
+    describe('TuningSystem.EqualTemperament', function() {
+
+      var toFrequency = TuningSystem.EqualTemperament.toFrequency;
+
+      it('converts to frequency (Hz) correctly', function() {
+        assert.equal(Math.round(toFrequency(Pitch.ANatural4)), 440);
+        assert.equal(Math.round(toFrequency(Pitch.ANatural3)), 220);
+        assert.equal(Math.round(toFrequency(Pitch.ANatural5)), 880);
+
+        assert.equal(Math.round(toFrequency(Pitch.CNatural4)), 262);
+        assert.equal(Math.round(toFrequency(Pitch.DNatural4)), 294);
+        assert.equal(Math.round(toFrequency(Pitch.FSharp1)), 46);
+      });
+
     });
 
   });

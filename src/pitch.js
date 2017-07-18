@@ -106,14 +106,14 @@ Interval.Quality.fromOffset = function(size, offset) {
     switch(Util.positiveModulus(offset, 12)) {
       case  1: return Interval.Quality.Augmented;
       case  0: return Interval.Quality.Major;
-      case -1: return Interval.Quality.Minor;
-      case -2: return Interval.Quality.Diminished;
+      case 11: return Interval.Quality.Minor;
+      case 10: return Interval.Quality.Diminished;
     }
   } else {
     switch(Util.positiveModulus(offset, 12)) {
       case  1: return Interval.Quality.Augmented;
       case  0: return Interval.Quality.Perfect;
-      case -1: return Interval.Quality.Diminished;
+      case 11: return Interval.Quality.Diminished;
     }
   }
   throw new Interval.Quality.InvalidOffsetError('Invalid offset ' + offset + ' (' + Util.positiveModulus(offset, 12) + ') for Interval of size ' + size + '.');
@@ -176,6 +176,18 @@ class Pitch {
     return this.name === other.name
       && this.accidental.isEqualTo(other.accidental)
       && this.octave.isEqualTo(other.octave);
+  }
+
+  isAbove(other) {
+    return (this.chromaticIndex + 7 * this.octave.number) > (other.chromaticIndex + 7 * other.octave.number);
+  }
+
+  isBelow(other) {
+    return !(this.isEqualTo(other) || this.isAbove(other));
+  }
+
+  toFrequency(tuningSystem) {
+    return (tuningSystem || TuningSystem.EqualTemperament).toFrequency(this);
   }
 }
 
@@ -265,5 +277,25 @@ Pitch.Name.all.forEach(function(pitchName) {
   });
 });
 
+class TuningSystem {
+  constructor(toFrequency) {
+    this.toFrequency = toFrequency;
+  }
+}
+
+TuningSystem.MakeEqualTemperament = function(a4Frequency) {
+  return new TuningSystem(function(pitch) {
+    var halfSteps = Interval.between(pitch, Pitch.ANatural4).halfSteps;
+    if (pitch.isBelow(Pitch.ANatural4)) {
+      halfSteps = -halfSteps;
+    }
+    var k12thRoot2 = Math.pow(2, 1/12);
+    return a4Frequency *  Math.pow(k12thRoot2, halfSteps);
+  });
+}
+
+TuningSystem.EqualTemperament = TuningSystem.EqualTemperament440 = TuningSystem.MakeEqualTemperament(440);
+
 module.exports.Pitch = Pitch;
 module.exports.Interval = Interval;
+module.exports.TuningSystem = TuningSystem;
