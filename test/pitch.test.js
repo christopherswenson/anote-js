@@ -159,4 +159,14 @@ describe('Pitch', function() {
 
   });
 
+  describe('Interval.Quality', function() {
+
+    it('should reject new construction', function() {
+      assert.throws(function() {
+        new Interval.Quality(function() {}, function() {});
+      })
+    });
+
+  });
+
 });
