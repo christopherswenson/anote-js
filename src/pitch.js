@@ -6,10 +6,10 @@ function intervalUpDown(interval, pitch, below) {
   var multiplier = below ? -1 : 1;
   var number = pitch.scalarIndex;
   var octaveOffset = Math.abs(Math.floor((number + multiplier * (interval.size - 1)) / 7));
-
-  var name = Pitch.Name.all[(number + multiplier * (interval.size - 1)) % 7];
-  var accidental = Pitch.Accidental.fromOffset(pitch.accidental.offset + multiplier * interval.quality.getOffset(interval.size));
+  var name = Pitch.Name.all[Util.positiveModulus(number + multiplier * (interval.size - 1), 7)];
   var octave = new Pitch.Octave(pitch.octave.number + multiplier * octaveOffset);
+  var numHalfsteps = pitch.halfStepsTo(new Pitch(name, Pitch.Accidental.Natural, octave));
+  var accidental = Pitch.Accidental.fromOffset(multiplier * (interval.halfSteps - numHalfsteps));
   return new Pitch(name, accidental, octave);
 }
 
@@ -190,8 +190,17 @@ class Pitch {
     return this.absoluteIndex < other.absoluteIndex;
   }
 
+  isOctaveOf(other) {
+    return this.name === other.name
+      && this.accidental.isEqualTo(other.accidental);
+  }
+
   toFrequency(tuningSystem) {
     return (tuningSystem || TuningSystem.EqualTemperament).toFrequency(this);
+  }
+
+  halfStepsTo(other) {
+    return Math.abs(this.absoluteIndex - other.absoluteIndex);
   }
 }
 
@@ -287,18 +296,44 @@ class TuningSystem {
   }
 }
 
-TuningSystem.MakeEqualTemperament = function(a4Frequency) {
+TuningSystem.MakeEqualTemperament = function(base, frequency) {
   return new TuningSystem(function(pitch) {
-    var halfSteps = Interval.between(pitch, Pitch.ANatural4).halfSteps;
-    if (pitch.isBelow(Pitch.ANatural4)) {
+    var halfSteps = Interval.between(pitch, base).halfSteps;
+    if (pitch.isBelow(base)) {
       halfSteps = -halfSteps;
     }
     var k12thRoot2 = Math.pow(2, 1/12);
-    return a4Frequency *  Math.pow(k12thRoot2, halfSteps);
+    return frequency * Math.pow(k12thRoot2, halfSteps);
   });
 }
 
-TuningSystem.EqualTemperament = TuningSystem.EqualTemperament440 = TuningSystem.MakeEqualTemperament(440);
+TuningSystem.EqualTemperament = TuningSystem.EqualTemperamentA440 = TuningSystem.MakeEqualTemperament(Pitch.ANatural4, 440);
+
+TuningSystem.MakePythagoreanTuning = function(base, frequency) {
+  return new TuningSystem(function(pitch) {
+    var currentUp = base;
+    var currentDown = base;
+    var fifthsAway = 0;
+    var octaveOffset;
+    while (true) {
+      if (currentDown.isOctaveOf(pitch)) {
+        fifthsAway = -fifthsAway;
+        octaveOffset = currentDown.octave.number - pitch.octave.number;
+        break;
+      } else if (currentUp.isOctaveOf(pitch)) {
+        octaveOffset = currentUp.octave.number - pitch.octave.number;
+        break;
+      }
+      currentUp = Interval.Perfect5.above(currentUp);
+      currentDown = Interval.Perfect5.below(currentDown);
+      fifthsAway += 1;
+    }
+    var ratio = Math.pow(3 / 2, fifthsAway);
+    return frequency * ratio * Math.pow(1 / 2, octaveOffset);
+  });
+}
+
+TuningSystem.PythagoreanTuning = TuningSystem.PythagoreanTuningD288 = TuningSystem.MakePythagoreanTuning(Pitch.DNatural4, 288);
 
 module.exports.Pitch = Pitch;
 module.exports.Interval = Interval;
