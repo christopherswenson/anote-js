@@ -24,6 +24,44 @@ describe('Pitch', function() {
 
   });
 
+  describe('Pitch.isAbove', function() {
+
+    it('returns true when pitch is above argument', function() {
+      assert(Pitch.ANatural4.isAbove(Pitch.ANatural3));
+      assert(Pitch.ASharp4.isAbove(Pitch.ANatural4));
+      assert(Pitch.BDoubleSharp4.isAbove(Pitch.CNatural4));
+    });
+
+    it('returns false when pitch is equal', function() {
+      assert(!Pitch.ANatural4.isAbove(Pitch.ANatural4));
+    });
+
+    it('returns false when pitch is enharmonic', function() {
+      assert(!Pitch.ASharp4.isAbove(Pitch.BFlat4));
+      assert(!Pitch.BDoubleSharp3.isAbove(Pitch.CSharp4));
+    });
+
+  });
+
+  describe('Pitch.isBelow', function() {
+
+    it('returns true when pitch is below argument', function() {
+      assert(Pitch.ANatural3.isBelow(Pitch.ANatural4));
+      assert(Pitch.ANatural4.isBelow(Pitch.ASharp4));
+      assert(Pitch.CNatural4.isBelow(Pitch.BDoubleSharp4));
+    });
+
+    it('returns false when pitch is equal', function() {
+      assert(!Pitch.ANatural4.isBelow(Pitch.ANatural4));
+    });
+
+    it('returns false when pitch is enharmonic', function() {
+      assert(!Pitch.BFlat4.isBelow(Pitch.ASharp4));
+      assert(!Pitch.CSharp4.isBelow(Pitch.BDoubleSharp3));
+    });
+
+  });
+
   describe('Pitch.Octave', function() {
     it('should reject noninteger octave number', function() {
       assert.throws(function() {

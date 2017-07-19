@@ -164,6 +164,10 @@ class Pitch {
     this.octave = octave;
   }
 
+  get absoluteIndex() {
+    return this.chromaticIndex + (12 * this.octave.number);
+  }
+
   get chromaticIndex() {
     return chromaticIndices[this.name.stringValue] + this.accidental.offset;
   }
@@ -179,11 +183,11 @@ class Pitch {
   }
 
   isAbove(other) {
-    return (this.chromaticIndex + 7 * this.octave.number) > (other.chromaticIndex + 7 * other.octave.number);
+    return this.absoluteIndex > other.absoluteIndex;
   }
 
   isBelow(other) {
-    return !(this.isEqualTo(other) || this.isAbove(other));
+    return this.absoluteIndex < other.absoluteIndex;
   }
 
   toFrequency(tuningSystem) {
