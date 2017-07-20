@@ -24,8 +24,29 @@ describe('Pitch', function() {
       assert.equal(Math.round(Pitch.FSharp1.toFrequency(et)), 46);
     });
 
-    it('works when using nondefault tuning', function() {
-      assert(notImplemented);
+    var pt = TuningSystem.PythagoreanTuning;
+
+    it('works when using TuningSystem.PythagoreanTuning', function() {
+      [
+        {pitch: Pitch.ANatural3, hz: 216},
+        {pitch: Pitch.ASharp3,   hz: 231},
+        {pitch: Pitch.BNatural3, hz: 243},
+        {pitch: Pitch.CNatural4, hz: 256},
+        {pitch: Pitch.CSharp4,   hz: 273},
+        {pitch: Pitch.DNatural4, hz: 288},
+        {pitch: Pitch.EFlat4,    hz: 303},
+        {pitch: Pitch.DSharp4,   hz: 308},
+        {pitch: Pitch.ENatural4, hz: 324},
+        {pitch: Pitch.FNatural4, hz: 341},
+        {pitch: Pitch.FSharp4,   hz: 365},
+        {pitch: Pitch.GNatural4, hz: 384},
+        {pitch: Pitch.AFlat4,    hz: 405},
+        {pitch: Pitch.GSharp4,   hz: 410},
+        {pitch: Pitch.ANatural4, hz: 432},
+        {pitch: Pitch.BFlat4,    hz: 455},
+      ].forEach(function(testCase) {
+        assert.equal(Math.round(testCase.pitch.toFrequency(pt)), testCase.hz);
+      });
     });
 
   });
