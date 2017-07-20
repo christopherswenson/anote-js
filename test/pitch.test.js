@@ -101,7 +101,7 @@ describe('Pitch', function() {
           Interval.Quality.Diminished,
           Interval.Quality.Augmented
         ].forEach(function(quality) {
-          new Interval(quality, size);
+          Interval.create(quality, size);
         });
       });
 
@@ -116,7 +116,7 @@ describe('Pitch', function() {
           Interval.Quality.Diminished,
           Interval.Quality.Augmented
         ].forEach(function(quality) {
-          new Interval(quality, size);
+          Interval.create(quality, size);
         });
       });
     });
@@ -129,7 +129,7 @@ describe('Pitch', function() {
         Interval.Size.Seventh,
       ].forEach(function(size) {
         assert.throws(function() {
-          new Interval(Interval.Quality.Perfect, size);
+          Interval.create(Interval.Quality.Perfect, size);
         });
       });
 
@@ -144,7 +144,7 @@ describe('Pitch', function() {
           Interval.Quality.Minor
         ].forEach(function(quality) {
           assert.throws(function() {
-            new Interval(quality, size);
+            Interval.create(quality, size);
           });
         });
       });
@@ -152,37 +152,37 @@ describe('Pitch', function() {
 
     it('should reject null size', function() {
       assert.throws(function() {
-        new Interval(Interval.Quality.Minor, null);
+        Interval.create(Interval.Quality.Minor, null);
       });
     });
 
     it('should reject negative size', function() {
       assert.throws(function() {
-        new Interval(Interval.Quality.Minor, -1);
+        Interval.create(Interval.Quality.Minor, -1);
       });
     });
 
     it('should reject noninteger size', function() {
       assert.throws(function() {
-        new Interval(Interval.Quality.Minor, 1.5);
+        Interval.create(Interval.Quality.Minor, 1.5);
       });
       assert.throws(function() {
-        new Interval(Interval.Quality.Minor, "1");
+        Interval.create(Interval.Quality.Minor, "1");
       });
       assert.throws(function() {
-        new Interval(Interval.Quality.Minor, NaN);
+        Interval.create(Interval.Quality.Minor, NaN);
       });
       assert.throws(function() {
-        new Interval(Interval.Quality.Minor, Infinity);
+        Interval.create(Interval.Quality.Minor, Infinity);
       });
       assert.throws(function() {
-        new Interval(Interval.Quality.Minor, -Infinity);
+        Interval.create(Interval.Quality.Minor, -Infinity);
       });
     });
 
     it('should reject null quality', function() {
       assert.throws(function() {
-        new Interval(Interval.Quality.Minor, null);
+        Interval.create(Interval.Quality.Minor, null);
       });
     });
 
@@ -191,22 +191,18 @@ describe('Pitch', function() {
   describe('Interval.isEqualTo', function() {
 
     it('should return true when intervals are the same object', function() {
-      var interval = new Interval(Interval.Quality.Major, Interval.Size.Sixth);
-      assert(interval.isEqualTo(interval));
+      assert(Interval.Major6.isEqualTo(Interval.Major6));
     });
 
     it('should return true when intervals are the same', function() {
-      var interval1 = new Interval(Interval.Quality.Major, Interval.Size.Sixth);
-      var interval2 = new Interval(Interval.Quality.Major, Interval.Size.Sixth);
-      assert(interval2.isEqualTo(interval1));
-      assert(interval1.isEqualTo(interval2));
+      var Major6 = Interval.create(Interval.Quality.Major, Interval.Size.Sixth);
+      assert(Major6.isEqualTo(Interval.Major6));
+      assert(Interval.Major6.isEqualTo(Major6));
     });
 
     it('should return false when intervals are not the same', function() {
-      var interval1 = new Interval(Interval.Quality.Augmented, Interval.Size.Fourth);
-      var interval2 = new Interval(Interval.Quality.Diminished, Interval.Size.Fifth);
-      assert(!interval2.isEqualTo(interval1));
-      assert(!interval1.isEqualTo(interval2));
+      assert(!Interval.Augmented4.isEqualTo(Interval.Diminished5));
+      assert(!Interval.Diminished5.isEqualTo(Interval.Augmented4));
     });
 
   });
@@ -214,22 +210,17 @@ describe('Pitch', function() {
   describe('Interval.isEnharmonicTo', function() {
 
     it('should return true when intervals are the same object', function() {
-      var interval = new Interval(Interval.Quality.Major, Interval.Size.Sixth);
-      assert(interval.isEnharmonicTo(interval));
+      assert(Interval.Major6.isEnharmonicTo(Interval.Major6));
     });
 
     it('should return true when intervals are enharmonic', function() {
-      var interval1 = new Interval(Interval.Quality.Augmented, Interval.Size.Fourth);
-      var interval2 = new Interval(Interval.Quality.Diminished, Interval.Size.Fifth);
-      assert(interval2.isEnharmonicTo(interval1));
-      assert(interval1.isEnharmonicTo(interval2));
+      assert(Interval.Augmented4.isEnharmonicTo(Interval.Diminished5));
+      assert(Interval.Diminished5.isEnharmonicTo(Interval.Augmented4));
     });
 
     it('should return false when intervals are not enharmonic', function() {
-      var interval1 = new Interval(Interval.Quality.Augmented, Interval.Size.Fourth);
-      var interval2 = new Interval(Interval.Quality.Perfect, Interval.Size.Fifth);
-      assert(!interval2.isEnharmonicTo(interval1));
-      assert(!interval1.isEnharmonicTo(interval2));
+      assert(!Interval.Augmented4.isEnharmonicTo(Interval.Perfect5));
+      assert(!Interval.Perfect5.isEnharmonicTo(Interval.Augmented4));
     });
 
   });
@@ -240,7 +231,7 @@ describe('Pitch', function() {
       assert(Interval.between(Pitch.CNatural4, Pitch.CNatural4).isEqualTo(Interval.Perfect1));
       assert(Interval.between(Pitch.CNatural4, Pitch.CNatural5).isEqualTo(Interval.Perfect8));
       assert(Interval.between(Pitch.CNatural4, Pitch.FSharp4).isEqualTo(Interval.Augmented4));
-      assert(Interval.between(Pitch.FSharp1, Pitch.ANatural4).isEqualTo(new Interval(Interval.Quality.Minor, 24)));
+      assert(Interval.between(Pitch.FSharp1, Pitch.ANatural4).isEqualTo(Interval.create(Interval.Quality.Minor, 24)));
     });
 
   });
@@ -300,26 +291,28 @@ describe('Pitch', function() {
       var toFrequency = TuningSystem.PythagoreanTuning.toFrequency;
 
       it('converts to frequency (Hz) correctly', function() {
-        [
-          {pitch: Pitch.ANatural3, hz: 216},
-          {pitch: Pitch.ASharp3,   hz: 231},
-          {pitch: Pitch.BNatural3, hz: 243},
-          {pitch: Pitch.CNatural4, hz: 256},
-          {pitch: Pitch.CSharp4,   hz: 273},
-          {pitch: Pitch.DNatural4, hz: 288},
-          {pitch: Pitch.EFlat4,    hz: 303},
-          {pitch: Pitch.DSharp4,   hz: 308},
-          {pitch: Pitch.ENatural4, hz: 324},
-          {pitch: Pitch.FNatural4, hz: 341},
-          {pitch: Pitch.FSharp4,   hz: 365},
-          {pitch: Pitch.GNatural4, hz: 384},
-          {pitch: Pitch.AFlat4,    hz: 405},
-          {pitch: Pitch.GSharp4,   hz: 410},
-          {pitch: Pitch.ANatural4, hz: 432},
-          {pitch: Pitch.BFlat4,    hz: 455},
-        ].forEach(function(testCase) {
-          assert.equal(Math.round(toFrequency(testCase.pitch)), testCase.hz);
-        });
+        for (var i = 0; i < 10000; i++) { // 349 ms --> 72 ms
+          [
+            {pitch: Pitch.ANatural3, hz: 216},
+            {pitch: Pitch.ASharp3,   hz: 231},
+            {pitch: Pitch.BNatural3, hz: 243},
+            {pitch: Pitch.CNatural4, hz: 256},
+            {pitch: Pitch.CSharp4,   hz: 273},
+            {pitch: Pitch.DNatural4, hz: 288},
+            {pitch: Pitch.EFlat4,    hz: 303},
+            {pitch: Pitch.DSharp4,   hz: 308},
+            {pitch: Pitch.ENatural4, hz: 324},
+            {pitch: Pitch.FNatural4, hz: 341},
+            {pitch: Pitch.FSharp4,   hz: 365},
+            {pitch: Pitch.GNatural4, hz: 384},
+            {pitch: Pitch.AFlat4,    hz: 405},
+            {pitch: Pitch.GSharp4,   hz: 410},
+            {pitch: Pitch.ANatural4, hz: 432},
+            {pitch: Pitch.BFlat4,    hz: 455},
+          ].forEach(function(testCase) {
+            assert.equal(Math.round(toFrequency(testCase.pitch)), testCase.hz);
+          });
+        }
       });
 
     });

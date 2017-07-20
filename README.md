@@ -15,7 +15,7 @@ This module provides helpful constants for all intervals with size from unison t
 ### Interval.Quality
 
 This submodule provides constants used for the construction of the `Interval` class: `Interval.Quality.Major`, `.Minor`, `.Perfect`, `.Diminshed`, and `.Augmented`.
-  
+
 ### Interval.Size
 
 While the `Interval` constructor takes any nonnegative integer for `size`, `Interval.Size` provides some named constants for interval sizes from unison to twelfth: `Interval.Size.Unison`, `.Second`, `.Third`, ..., `.Eleventh`, and `.Twelfth`.

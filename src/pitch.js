@@ -2,56 +2,63 @@
 
 var Util = require('../src/util').Util;
 
-function intervalUpDown(interval, pitch, below) {
-  var multiplier = below ? -1 : 1;
-  var number = pitch.scalarIndex;
-  var octaveOffset = Math.abs(Math.floor((number + multiplier * (interval.size - 1)) / 7));
-  var name = Pitch.Name.all[Util.positiveModulus(number + multiplier * (interval.size - 1), 7)];
-  var octave = new Pitch.Octave(pitch.octave.number + multiplier * octaveOffset);
-  var numHalfsteps = pitch.halfStepsTo(new Pitch(name, Pitch.Accidental.Natural, octave));
-  var accidental = Pitch.Accidental.fromOffset(multiplier * (interval.halfSteps - numHalfsteps));
-  return new Pitch(name, accidental, octave);
-}
-
 class Interval {
-  constructor(quality, size) {
-    this.size = size;
-    this.quality = quality;
-    if (size === null || size === undefined) {
-      throw new Interval.NullSizeError("Interval Size may not be null.");
-    } else if (!Number.isInteger(size)) {
-      throw new Interval.NonintegerSizeError("Interval Size must be an integer.");
-    } else if (size < 0) {
-      throw new Interval.NegativeSizeError("Interval Size may not be negative.");
-    } else if (quality === null || quality === undefined) {
-      throw new Interval.NullQualityError("Interval Quality may not be null.");
-    } else if (!quality.isAllowed(size)) {
-      throw new Interval.InvalidQualityError("Invalid Quality for Interval with Size " + size + ".");
-    }
-    this.halfSteps = quality.getHalfSteps(size);
+  constructor(scalarOffset, chromaticOffset) {
+    this.scalarOffset = scalarOffset;
+    this.chromaticOffset = chromaticOffset;
   }
 
   above(pitch) {
-    return intervalUpDown(this, pitch, false);
+    var absoluteScalarIndex = pitch.absoluteScalarIndex + this.scalarOffset;
+    var absoluteChromaticIndex = pitch.absoluteChromaticIndex + this.chromaticOffset
+    return new Pitch(absoluteScalarIndex, absoluteChromaticIndex);
   }
 
   below(pitch) {
-    return intervalUpDown(this, pitch, true);
+    var absoluteScalarIndex = pitch.absoluteScalarIndex - this.scalarOffset;
+    var absoluteChromaticIndex = pitch.absoluteChromaticIndex - this.chromaticOffset
+    return new Pitch(absoluteScalarIndex, absoluteChromaticIndex);
   }
 
   isEqualTo(other) {
-    return this.size == other.size
-      && this.quality.isEqualTo(other.quality);
+    return this.scalarOffset == other.scalarOffset
+      && this.chromaticOffset == other.chromaticOffset;
   }
 
   isEnharmonicTo(other) {
-    return this.halfSteps == other.halfSteps;
+    return this.chromaticOffset == other.chromaticOffset;
   }
+
+  get size() {
+    return this.scalarOffset + 1;
+  }
+
+  get quality() {
+    var offset = [11, 0, 2, 4, 5, 7, 9][this.scalarOffset % 7] - this.chromaticOffset;
+    return Interval.Quality.fromOffset(offset);
+  }
+}
+
+Interval.create = function(quality, size) {
+  if (size === null || size === undefined) {
+    throw new Interval.NullSizeError("Interval Size may not be null.");
+  } else if (!Number.isInteger(size)) {
+    throw new Interval.NonintegerSizeError("Interval Size must be an integer.");
+  } else if (size < 1) {
+    throw new Interval.NonpositiveSizeError("Interval Size must be positive.");
+  } else if (quality === null || quality === undefined) {
+    throw new Interval.NullQualityError("Interval Quality may not be null.");
+  } else if (!quality.isAllowed(size)) {
+    throw new Interval.InvalidQualityError("Invalid Quality for Interval with Size " + size + ".");
+  }
+  var scalarOffset = size - 1;
+  var chromaticOffset = quality.getHalfSteps(size);
+  return new Interval(scalarOffset, chromaticOffset);
 }
 
 Util.addErrorTypes(Interval, "Interval", [
   "NullSizeError",
-  "NegativeSizeError",
+  "NonpositiveSizeError",
   "NonintegerSizeError",
   "NullQualityError",
   "InvalidQualityError",
@@ -142,57 +149,52 @@ Interval.Size = {
   var quality = Interval.Quality[qualityName];
   [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].forEach(function(size) {
     if (quality.isAllowed(size)) {
-      Interval[qualityName + size] = new Interval(quality, size);
+      Interval[qualityName + size] = Interval.create(quality, size);
     }
   });
 });
 
 Interval.between = function(pitch1, pitch2) {
-  var scalarOffset = Math.abs(pitch1.scalarIndex - pitch2.scalarIndex) + 1;
-  var octaveOffset = Math.abs(pitch1.octave.number - pitch2.octave.number);
-  var totalSize = scalarOffset + 7 * octaveOffset;
-  var chromaticOffset = Math.abs(pitch1.chromaticIndex - pitch2.chromaticIndex);
-  var defaultOffset = Interval.Quality.Perfect.getHalfSteps(totalSize);
-  var quality = Interval.Quality.fromOffset(totalSize, chromaticOffset - defaultOffset);
-  return new Interval(quality, totalSize);
+  var scalarOffset = pitch1.absoluteScalarIndex - pitch2.absoluteScalarIndex;
+  var chromaticOffset = pitch1.absoluteChromaticIndex - pitch2.absoluteChromaticIndex;
+  var sign = pitch1.isBelow(pitch2) ? -1 : 1;
+  return new Interval(sign * scalarOffset, sign * chromaticOffset);
 }
 
 class Pitch {
-  constructor(name, accidental, octave) {
-    this.name = name;
-    this.accidental = accidental;
-    this.octave = octave;
-  }
-
-  get absoluteIndex() {
-    return this.chromaticIndex + (12 * this.octave.number);
+  constructor(absoluteScalarIndex, absoluteChromaticIndex) {
+    this.absoluteScalarIndex = absoluteScalarIndex;
+    this.absoluteChromaticIndex = absoluteChromaticIndex;
   }
 
   get chromaticIndex() {
-    return chromaticIndices[this.name.stringValue] + this.accidental.offset;
+    return Util.positiveModulus(this.absoluteChromaticIndex, 12);
   }
 
   get scalarIndex() {
-    return Pitch.Name.all.indexOf(this.name);
+    return Util.positiveModulus(this.absoluteScalarIndex, 7);
   }
 
   isEqualTo(other) {
-    return this.name === other.name
-      && this.accidental.isEqualTo(other.accidental)
-      && this.octave.isEqualTo(other.octave);
+    return this.absoluteScalarIndex == other.absoluteScalarIndex
+      && this.absoluteChromaticIndex == other.absoluteChromaticIndex;
+  }
+
+  isEnharmonicTo(other) {
+    return this.absoluteChromaticIndex == other.absoluteChromaticIndex;
   }
 
   isAbove(other) {
-    return this.absoluteIndex > other.absoluteIndex;
+    return this.absoluteChromaticIndex > other.absoluteChromaticIndex;
   }
 
   isBelow(other) {
-    return this.absoluteIndex < other.absoluteIndex;
+    return this.absoluteChromaticIndex < other.absoluteChromaticIndex;
   }
 
   isOctaveOf(other) {
-    return this.name === other.name
-      && this.accidental.isEqualTo(other.accidental);
+    return this.scalarIndex == other.scalarIndex
+      && this.chromaticIndex == other.chromaticIndex;
   }
 
   toFrequency(tuningSystem) {
@@ -200,8 +202,27 @@ class Pitch {
   }
 
   halfStepsTo(other) {
-    return Math.abs(this.absoluteIndex - other.absoluteIndex);
+    return Math.abs(this.absoluteChromaticIndex - other.absoluteChromaticIndex);
   }
+
+  get name() {
+    return Pitch.Name.all[this.scalarIndex];
+  }
+
+  get accidental() {
+    var offset = this.chromaticIndex - chromaticIndices[this.name.stringValue];
+    return Pitch.Accidental.fromOffset(offset);
+  }
+
+  get octave() {
+    return new Pitch.Octave(Math.floor(this.absoluteScalarIndex / 7));
+  }
+}
+
+Pitch.create = function(name, accidental, octave) {
+  var absoluteScalarIndex = Pitch.Name.all.indexOf(name) + (7 * octave.number);
+  var absoluteChromaticIndex = chromaticIndices[name.stringValue] + accidental.offset + (12 * octave.number);
+  return new Pitch(absoluteScalarIndex, absoluteChromaticIndex);
 }
 
 Pitch.Accidental = class {
@@ -284,7 +305,7 @@ Pitch.Name.all.forEach(function(pitchName) {
     [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function(octaveNumber) {
       return new Pitch.Octave(octaveNumber);
     }).forEach(function(octave) {
-      var pitch = new Pitch(pitchName, accidental, octave);
+      var pitch = Pitch.create(pitchName, accidental, octave);
       Pitch[pitchName.stringValue + accidentalName + octave.number] = pitch;
     });
   });
@@ -298,12 +319,10 @@ class TuningSystem {
 
 TuningSystem.MakeEqualTemperament = function(base, frequency) {
   return new TuningSystem(function(pitch) {
-    var halfSteps = Interval.between(pitch, base).halfSteps;
-    if (pitch.isBelow(base)) {
-      halfSteps = -halfSteps;
-    }
-    var k12thRoot2 = Math.pow(2, 1/12);
-    return frequency * Math.pow(k12thRoot2, halfSteps);
+    var chromaticOffset = Interval.between(pitch, base).chromaticOffset;
+    var sign = pitch.isBelow(base) ? -1 : 1;
+    var k12thRoot2 = Math.pow(2, 1 / 12);
+    return frequency * Math.pow(k12thRoot2, sign * chromaticOffset);
   });
 }
 
@@ -334,6 +353,8 @@ TuningSystem.MakePythagoreanTuning = function(base, frequency) {
 }
 
 TuningSystem.PythagoreanTuning = TuningSystem.PythagoreanTuningD288 = TuningSystem.MakePythagoreanTuning(Pitch.DNatural4, 288);
+
+console.log(Interval.Perfect5)
 
 module.exports.Pitch = Pitch;
 module.exports.Interval = Interval;
