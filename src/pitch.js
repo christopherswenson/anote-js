@@ -2,181 +2,69 @@
 
 var Util = require('../src/util').Util;
 
-function intervalUpDown(interval, pitch, below) {
-  var multiplier = below ? -1 : 1;
-  var number = pitch.scalarIndex;
-  var octaveOffset = Math.abs(Math.floor((number + multiplier * (interval.size - 1)) / 7));
-
-  var name = Pitch.Name.all[(number + multiplier * (interval.size - 1)) % 7];
-  var accidental = Pitch.Accidental.fromOffset(pitch.accidental.offset + multiplier * interval.quality.getOffset(interval.size));
-  var octave = new Pitch.Octave(pitch.octave.number + multiplier * octaveOffset);
-  return new Pitch(name, accidental, octave);
-}
-
-class Interval {
-  constructor(quality, size) {
-    this.size = size;
-    this.quality = quality;
-    if (size === null || size === undefined) {
-      throw new Interval.NullSizeError("Interval Size may not be null.");
-    } else if (!Number.isInteger(size)) {
-      throw new Interval.NonintegerSizeError("Interval Size must be an integer.");
-    } else if (size < 0) {
-      throw new Interval.NegativeSizeError("Interval Size may not be negative.");
-    } else if (quality === null || quality === undefined) {
-      throw new Interval.NullQualityError("Interval Quality may not be null.");
-    } else if (!quality.isAllowed(size)) {
-      throw new Interval.InvalidQualityError("Invalid Quality for Interval with Size " + size + ".");
-    }
-    this.halfSteps = quality.getHalfSteps(size);
-  }
-
-  above(pitch) {
-    return intervalUpDown(this, pitch, false);
-  }
-
-  below(pitch) {
-    return intervalUpDown(this, pitch, true);
-  }
-
-  isEqualTo(other) {
-    return this.size == other.size
-      && this.quality.isEqualTo(other.quality);
-  }
-
-  isEnharmonicTo(other) {
-    return this.halfSteps == other.halfSteps;
-  }
-}
-
-Util.addErrorTypes(Interval, "Interval", [
-  "NullSizeError",
-  "NegativeSizeError",
-  "NonintegerSizeError",
-  "NullQualityError",
-  "InvalidQualityError",
-]);
-
-var intervalQualitiesFixed = false;
-Interval.Quality = class {
-  constructor(isAllowed, getOffset) {
-    if (intervalQualitiesFixed) {
-      throw new Interval.Quality.IllegalConstructionError("Illegal construction of Interval.Quality.")
-    }
-    this.getOffset = getOffset;
-    this.isAllowed = isAllowed;
-  }
-
-  getHalfSteps(size) {
-    return [11, 0, 2, 4, 5, 7, 9][size % 7] + Math.floor(size / 7) * 12 + this.getOffset(size);
-  }
-
-  isEqualTo(other) {
-    return this === other;
-  }
-}
-
-Util.addErrorTypes(Interval.Quality, "Interval.Quality", [
-  "IllegalConstructionError"
-]);
-
-var isAllowed2367 = function(size) {
-  return ~[0, 2, 3, 6].indexOf(size % 7);
-}
-
-var isAllowed1458 = function(size) {
-  return ~[1, 4, 5].indexOf(size % 7);
-}
-
-var isAllowedAll = function(size) {
-  return true;
-}
-
-Interval.Quality.Major      = new Interval.Quality(isAllowed2367, (size) => 0);
-Interval.Quality.Perfect    = new Interval.Quality(isAllowed1458, (size) => 0);
-Interval.Quality.Minor      = new Interval.Quality(isAllowed2367, (size) => -1);
-Interval.Quality.Augmented  = new Interval.Quality(isAllowedAll,  (size) => 1);
-Interval.Quality.Diminished = new Interval.Quality(isAllowedAll,  function(size) {
-  return ~[1, 4, 5].indexOf(size % 7) ? -1 : -2;
-});
-intervalQualitiesFixed = true;
-
-Interval.Quality.fromOffset = function(size, offset) {
-  if (isAllowed2367(size % 7)) {
-    switch(Util.positiveModulus(offset, 12)) {
-      case  1: return Interval.Quality.Augmented;
-      case  0: return Interval.Quality.Major;
-      case -1: return Interval.Quality.Minor;
-      case -2: return Interval.Quality.Diminished;
-    }
-  } else {
-    switch(Util.positiveModulus(offset, 12)) {
-      case  1: return Interval.Quality.Augmented;
-      case  0: return Interval.Quality.Perfect;
-      case -1: return Interval.Quality.Diminished;
-    }
-  }
-  throw new Interval.Quality.InvalidOffsetError('Invalid offset ' + offset + ' (' + Util.positiveModulus(offset, 12) + ') for Interval of size ' + size + '.');
-}
-
-Util.addErrorTypes(Interval.Quality, "Interval.Quality", [
-  "InvalidOffsetError",
-]);
-
-Interval.Size = {
-  Unison: 1,
-  Second: 2,
-  Third: 3,
-  Fourth: 4,
-  Fifth: 5,
-  Sixth: 6,
-  Seventh: 7,
-  Octave: 8,
-  Ninth: 9,
-  Tenth: 10,
-  Eleventh: 11,
-  Twelfth: 12
-};
-
-["Major", "Perfect", "Minor", "Augmented", "Diminished"].forEach(function(qualityName) {
-  var quality = Interval.Quality[qualityName];
-  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].forEach(function(size) {
-    if (quality.isAllowed(size)) {
-      Interval[qualityName + size] = new Interval(quality, size);
-    }
-  });
-});
-
-Interval.between = function(pitch1, pitch2) {
-  var scalarOffset = Math.abs(pitch1.scalarIndex - pitch2.scalarIndex) + 1;
-  var octaveOffset = Math.abs(pitch1.octave.number - pitch2.octave.number);
-  var totalSize = scalarOffset + 7 * octaveOffset;
-  var chromaticOffset = Math.abs(pitch1.chromaticIndex - pitch2.chromaticIndex);
-  var defaultOffset = Interval.Quality.Perfect.getHalfSteps(totalSize);
-  var quality = Interval.Quality.fromOffset(totalSize, chromaticOffset - defaultOffset);
-  return new Interval(quality, totalSize);
-}
-
 class Pitch {
-  constructor(name, accidental, octave) {
-    this.name = name;
-    this.accidental = accidental;
-    this.octave = octave;
+  constructor(absoluteScalarIndex, absoluteChromaticIndex) {
+    this.absoluteScalarIndex = absoluteScalarIndex;
+    this.absoluteChromaticIndex = absoluteChromaticIndex;
   }
 
   get chromaticIndex() {
-    return chromaticIndices[this.name.stringValue] + this.accidental.offset;
+    return Util.positiveModulus(this.absoluteChromaticIndex, 12);
   }
 
   get scalarIndex() {
-    return Pitch.Name.all.indexOf(this.name);
+    return Util.positiveModulus(this.absoluteScalarIndex, 7);
   }
 
   isEqualTo(other) {
-    return this.name === other.name
-      && this.accidental.isEqualTo(other.accidental)
-      && this.octave.isEqualTo(other.octave);
+    return this.absoluteScalarIndex == other.absoluteScalarIndex
+      && this.absoluteChromaticIndex == other.absoluteChromaticIndex;
   }
+
+  isEnharmonicTo(other) {
+    return this.absoluteChromaticIndex == other.absoluteChromaticIndex;
+  }
+
+  isAbove(other) {
+    return this.absoluteChromaticIndex > other.absoluteChromaticIndex;
+  }
+
+  isBelow(other) {
+    return this.absoluteChromaticIndex < other.absoluteChromaticIndex;
+  }
+
+  isOctaveOf(other) {
+    return this.scalarIndex == other.scalarIndex
+      && this.chromaticIndex == other.chromaticIndex;
+  }
+
+  toFrequency(tuningSystem) {
+    return tuningSystem.toFrequency(this);
+  }
+
+  halfStepsTo(other) {
+    return Math.abs(this.absoluteChromaticIndex - other.absoluteChromaticIndex);
+  }
+
+  get name() {
+    return Pitch.Name.all[this.scalarIndex];
+  }
+
+  get accidental() {
+    var offset = this.absoluteChromaticIndex - (chromaticIndices[this.scalarIndex] + 12 * (this.octave.number));
+    return Pitch.Accidental.fromOffset(offset);
+  }
+
+  get octave() {
+    return Pitch.Octave.withNumber(Math.floor(this.absoluteScalarIndex / 7));
+  }
+}
+
+Pitch.create = function(name, accidental, octave) {
+  var scalarIndex = Pitch.Name.all.indexOf(name);
+  var absoluteScalarIndex = Pitch.Name.all.indexOf(name) + (7 * octave.number);
+  var absoluteChromaticIndex = chromaticIndices[scalarIndex] + accidental.offset + (12 * octave.number);
+  return new Pitch(absoluteScalarIndex, absoluteChromaticIndex);
 }
 
 Pitch.Accidental = class {
@@ -208,6 +96,10 @@ Pitch.Name = class {
     }
     this.stringValue = stringValue;
   }
+
+  isEqualTo(other) {
+    return this === other;
+  }
 }
 
 Util.addErrorTypes(Pitch.Name, "Pitch.Name", [
@@ -227,14 +119,15 @@ pitchNamesFixed = true;
 
 Pitch.Name.all = 'CDEFGAB'.split("").map((letter) => Pitch.Name[letter]);
 
-var chromaticIndices = {}
-chromaticIndices['C'] = 0;
-chromaticIndices['D'] = 2;
-chromaticIndices['E'] = 4;
-chromaticIndices['F'] = 5;
-chromaticIndices['G'] = 7;
-chromaticIndices['A'] = 9;
-chromaticIndices['B'] = 11;
+var chromaticIndices = {
+  0: 0,
+  1: 2,
+  2: 4,
+  3: 5,
+  4: 7,
+  5: 9,
+  6: 11
+}
 
 Pitch.Octave = class {
   constructor(number) {
@@ -249,6 +142,10 @@ Pitch.Octave = class {
   }
 }
 
+Pitch.Octave.withNumber = function(number) {
+  return new Pitch.Octave(number);
+}
+
 Util.addErrorTypes(Pitch.Octave, "Pitch.Octave", [
   "NonintegerOctaveError",
 ]);
@@ -257,13 +154,12 @@ Pitch.Name.all.forEach(function(pitchName) {
   ["Natural", "Sharp", "Flat", "DoubleSharp", "DoubleFlat"].forEach(function(accidentalName) {
     var accidental = Pitch.Accidental[accidentalName];
     [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function(octaveNumber) {
-      return new Pitch.Octave(octaveNumber);
+      return Pitch.Octave.withNumber(octaveNumber);
     }).forEach(function(octave) {
-      var pitch = new Pitch(pitchName, accidental, octave);
+      var pitch = Pitch.create(pitchName, accidental, octave);
       Pitch[pitchName.stringValue + accidentalName + octave.number] = pitch;
     });
   });
 });
 
 module.exports.Pitch = Pitch;
-module.exports.Interval = Interval;
