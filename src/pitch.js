@@ -51,18 +51,19 @@ class Pitch {
   }
 
   get accidental() {
-    var offset = this.chromaticIndex - chromaticIndices[this.name.stringValue];
+    var offset = this.absoluteChromaticIndex - (chromaticIndices[this.scalarIndex] + 12 * (this.octave.number));
     return Pitch.Accidental.fromOffset(offset);
   }
 
   get octave() {
-    return new Pitch.Octave(Math.floor(this.absoluteScalarIndex / 7));
+    return Pitch.Octave.withNumber(Math.floor(this.absoluteScalarIndex / 7));
   }
 }
 
 Pitch.create = function(name, accidental, octave) {
+  var scalarIndex = Pitch.Name.all.indexOf(name);
   var absoluteScalarIndex = Pitch.Name.all.indexOf(name) + (7 * octave.number);
-  var absoluteChromaticIndex = chromaticIndices[name.stringValue] + accidental.offset + (12 * octave.number);
+  var absoluteChromaticIndex = chromaticIndices[scalarIndex] + accidental.offset + (12 * octave.number);
   return new Pitch(absoluteScalarIndex, absoluteChromaticIndex);
 }
 
@@ -95,6 +96,10 @@ Pitch.Name = class {
     }
     this.stringValue = stringValue;
   }
+
+  isEqualTo(other) {
+    return this === other;
+  }
 }
 
 Util.addErrorTypes(Pitch.Name, "Pitch.Name", [
@@ -114,14 +119,15 @@ pitchNamesFixed = true;
 
 Pitch.Name.all = 'CDEFGAB'.split("").map((letter) => Pitch.Name[letter]);
 
-var chromaticIndices = {}
-chromaticIndices['C'] = 0;
-chromaticIndices['D'] = 2;
-chromaticIndices['E'] = 4;
-chromaticIndices['F'] = 5;
-chromaticIndices['G'] = 7;
-chromaticIndices['A'] = 9;
-chromaticIndices['B'] = 11;
+var chromaticIndices = {
+  0: 0,
+  1: 2,
+  2: 4,
+  3: 5,
+  4: 7,
+  5: 9,
+  6: 11
+}
 
 Pitch.Octave = class {
   constructor(number) {
@@ -136,6 +142,10 @@ Pitch.Octave = class {
   }
 }
 
+Pitch.Octave.withNumber = function(number) {
+  return new Pitch.Octave(number);
+}
+
 Util.addErrorTypes(Pitch.Octave, "Pitch.Octave", [
   "NonintegerOctaveError",
 ]);
@@ -144,7 +154,7 @@ Pitch.Name.all.forEach(function(pitchName) {
   ["Natural", "Sharp", "Flat", "DoubleSharp", "DoubleFlat"].forEach(function(accidentalName) {
     var accidental = Pitch.Accidental[accidentalName];
     [0, 1, 2, 3, 4, 5, 6, 7, 8].map(function(octaveNumber) {
-      return new Pitch.Octave(octaveNumber);
+      return Pitch.Octave.withNumber(octaveNumber);
     }).forEach(function(octave) {
       var pitch = Pitch.create(pitchName, accidental, octave);
       Pitch[pitchName.stringValue + accidentalName + octave.number] = pitch;
