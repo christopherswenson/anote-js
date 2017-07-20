@@ -56,9 +56,11 @@ While the `Interval` constructor takes any nonnegative integer for `size`, `Inte
 
 A tuning system is a way to serialize abstract pitches to frequencies. A `TuningSystem` instance is defined entirely by by its one member function, `.toFrequency(pitch)`. New tuning systems may be defined with `new TuningSystem(toFrequency)`, where `toFrequency` is a function that accepts a pitch and returns its frequency. Some common tuning systems are easily accessible with the following constants:
 
-- `TuningSystem.EqualTemperament` with A440
-- `TuningSystem.PythagoreanTuning` with D288
-- `TuningSystem.QuarterCommaMeantone` with D288
+- `TuningSystem.EqualTemperament` with `ANatural4` = 440 Hz
+- `TuningSystem.PythagoreanTuning` with `DNatural4` = 288 Hz
+- `TuningSystem.QuarterCommaMeantone` with `DNatural4` = 288 Hz
+
+Each of these tuning systems additionally has a `TuningSystem.Make<TuningSystemName>(base, frequency)` function, which returns a version of the tuning system based at a different pitch.
 
 ### TuningSystem.EqualTemperament
 
