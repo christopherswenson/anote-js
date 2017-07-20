@@ -4,6 +4,8 @@ A JavaScript library for musical notes, intervals, chords, etc.
 ```javascript
 Interval.between(Pitch.BNatural4, Pitch.FNatural5) // Interval.Diminished5
 Interval.Major3.above(Pitch.CNatural4) // Pitch.ENatural4
+Pitch.ANatural4.toFrequency(TuningSystem.EqualTemperament) // 440
+Pitch.CSharp4.isEnharmonicTo(Pitch.DFlat4) // true
 ```
 
 ## Pitch
