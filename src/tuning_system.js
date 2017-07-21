@@ -22,25 +22,22 @@ TuningSystem.EqualTemperament = TuningSystem.EqualTemperamentA440 = TuningSystem
 
 var make5thBasedTuningFunction = function(base, frequency, fifthRatio) {
   return function toFrequency(pitch) {
-    var currentUp = base;
-    var currentDown = base;
-    var fifthsAway = 0;
-    var octaveOffset;
-    while (true) {
-      if (currentDown.isOctaveOf(pitch)) {
-        fifthsAway = -fifthsAway;
-        octaveOffset = currentDown.octave.number - pitch.octave.number;
-        break;
-      } else if (currentUp.isOctaveOf(pitch)) {
-        octaveOffset = currentUp.octave.number - pitch.octave.number;
-        break;
-      }
-      currentUp = Interval.Perfect5.above(currentUp);
-      currentDown = Interval.Perfect5.below(currentDown);
-      fifthsAway += 1;
-    }
-    var ratio = Math.pow(fifthRatio, fifthsAway);
-    return frequency * ratio * Math.pow(1 / 2, octaveOffset);
+    var a1 = pitch.absoluteScalarIndex;
+    var a2 = pitch.absoluteChromaticIndex;
+    var b1 = Interval.Perfect5.scalarOffset;
+    var b2 = Interval.Perfect5.chromaticOffset;
+    var c1 = base.absoluteScalarIndex;
+    var c2 = base.absoluteChromaticIndex;
+
+    // solved the equations
+      // a1 - b1 * n = c1 +  7 * k
+      // a2 - b2 * n = c2 + 12 * k
+
+    var n = (12 * a1 - 7 * a2 - 12 * c1 + 7 * c2) / (12 * b1 - 7 * b2); // fifths away
+    var k = (a1 * b2 - a2 * b1 + b1 * c2 - b2 * c1) / (12 * b1 - 7 * b2); // octave offset
+
+    var ratio = Math.pow(fifthRatio, n);
+    return frequency * ratio * Math.pow(1 / 2, k);
   }
 }
 
