@@ -21,7 +21,6 @@ TuningSystem.MakeEqualTemperament = function(base, frequency) {
 TuningSystem.EqualTemperament = TuningSystem.EqualTemperamentA440 = TuningSystem.MakeEqualTemperament(Pitch.ANatural4, 440);
 
 var make5thBasedTuningFunction = function(base, frequency, fifthRatio) {
-
   return function toFrequency(pitch) {
     var a1 = pitch.absoluteScalarIndex;
     var a2 = pitch.absoluteChromaticIndex;
@@ -30,11 +29,15 @@ var make5thBasedTuningFunction = function(base, frequency, fifthRatio) {
     var c1 = base.absoluteScalarIndex;
     var c2 = base.absoluteChromaticIndex;
 
-    var fifthsAway = (12 * a1 - 7 * a2 - 12 * c1 + 7 * c2) / (12 * b1 - 7 * b2);
-    var octaveOffset = (a1 * b2 - a2 * b1 + b1 * c2 - b2 * c1) / (12 * b1 - 7 * b2);
+    // solved the equations
+      // a1 - b1 * n = c1 +  7 * k
+      // a2 - b2 * n = c2 + 12 * k
 
-    var ratio = Math.pow(fifthRatio, fifthsAway);
-    return frequency * ratio * Math.pow(1 / 2, octaveOffset);
+    var n = (12 * a1 - 7 * a2 - 12 * c1 + 7 * c2) / (12 * b1 - 7 * b2); // fifths away
+    var k = (a1 * b2 - a2 * b1 + b1 * c2 - b2 * c1) / (12 * b1 - 7 * b2); // octave offset
+
+    var ratio = Math.pow(fifthRatio, n);
+    return frequency * ratio * Math.pow(1 / 2, k);
   }
 }
 
