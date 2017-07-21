@@ -20,8 +20,8 @@ TuningSystem.MakeEqualTemperament = function(base, frequency) {
 
 TuningSystem.EqualTemperament = TuningSystem.EqualTemperamentA440 = TuningSystem.MakeEqualTemperament(Pitch.ANatural4, 440);
 
-TuningSystem.MakePythagoreanTuning = function(base, frequency) {
-  return new TuningSystem(function(pitch) {
+var make5thBasedTuningFunction = function(base, frequency, fifthRatio) {
+  return function toFrequency(pitch) {
     var currentUp = base;
     var currentDown = base;
     var fifthsAway = 0;
@@ -39,11 +39,21 @@ TuningSystem.MakePythagoreanTuning = function(base, frequency) {
       currentDown = Interval.Perfect5.below(currentDown);
       fifthsAway += 1;
     }
-    var ratio = Math.pow(3 / 2, fifthsAway);
+    var ratio = Math.pow(fifthRatio, fifthsAway);
     return frequency * ratio * Math.pow(1 / 2, octaveOffset);
-  });
+  }
+}
+
+TuningSystem.MakePythagoreanTuning = function(base, frequency) {
+  return new TuningSystem(make5thBasedTuningFunction(base, frequency, 3 / 2));
 }
 
 TuningSystem.PythagoreanTuning = TuningSystem.PythagoreanTuningD288 = TuningSystem.MakePythagoreanTuning(Pitch.DNatural4, 288);
+
+TuningSystem.MakeQuarterCommaMeantone = function(base, frequency) {
+  return new TuningSystem(make5thBasedTuningFunction(base, frequency, Math.pow(5, 1 / 4)));
+}
+
+TuningSystem.QuarterCommaMeantone = TuningSystem.MakeQuarterCommaMeantone(Pitch.DNatural4, 288);
 
 module.exports.TuningSystem = TuningSystem;
